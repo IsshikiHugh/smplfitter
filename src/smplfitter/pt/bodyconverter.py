@@ -29,9 +29,9 @@ class BodyConverter(nn.Module):
         super().__init__()
         self.body_model_in = body_model_in
         self.body_model_out = body_model_out
-        self.fitter = _bodyfitter.BodyFitter(self.body_model_out, enable_kid=True)
+        self.fitter = _bodyfitter.BodyFitter(self.body_model_out, enable_kid=False)
 
-        DATA_ROOT = os.getenv('DATA_ROOT', '.')
+        DATA_ROOT = os.getenv('DATA_ROOT', './data_inputs')
         if self.body_model_in.num_vertices == 6890 and self.body_model_out.num_vertices == 10475:
             csr_path = f'{DATA_ROOT}/body_models/smpl2smplx_deftrafo_setup.pkl'
         elif self.body_model_in.num_vertices == 10475 and self.body_model_out.num_vertices == 6890:
@@ -39,10 +39,11 @@ class BodyConverter(nn.Module):
         else:
             csr_path = None
 
-        self.vertex_converter_csr: Optional[nn.Buffer]
+        self.vertex_converter_csr: Optional[torch.Tensor]
         if csr_path is not None:
-            self.vertex_converter_csr = nn.Buffer(
-                scipy2torch_csr(load_vertex_converter_csr(csr_path))
+            self.register_buffer(
+                'vertex_converter_csr',
+                scipy2torch_csr(load_vertex_converter_csr(csr_path)),
             )
         else:
             self.vertex_converter_csr = None
@@ -108,6 +109,7 @@ class BodyConverter(nn.Module):
             )
             fit_out = dict(shape_betas=fit['shape_betas'], trans=fit['trans'])
             if kid_factor is not None:
+                print(kid_factor)
                 fit_out['kid_factor'] = fit['kid_factor']
         else:
             fit = self.fitter.fit(

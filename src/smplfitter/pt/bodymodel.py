@@ -73,19 +73,21 @@ class BodyModel(nn.Module):
         )
 
         # Register buffers and parameters
-        self.v_template = nn.Buffer(torch.tensor(data.v_template, dtype=torch.float32))
-        self.shapedirs = nn.Buffer(torch.tensor(data.shapedirs, dtype=torch.float32))
-        self.posedirs = nn.Buffer(torch.tensor(data.posedirs, dtype=torch.float32))
-        self.J_regressor_post_lbs = nn.Buffer(
-            torch.tensor(data.J_regressor_post_lbs, dtype=torch.float32)
+        self.register_buffer('v_template', torch.tensor(data.v_template, dtype=torch.float32))
+        self.register_buffer('shapedirs', torch.tensor(data.shapedirs, dtype=torch.float32))
+        self.register_buffer('posedirs', torch.tensor(data.posedirs, dtype=torch.float32))
+        self.register_buffer(
+            'J_regressor_post_lbs',
+            torch.tensor(data.J_regressor_post_lbs, dtype=torch.float32),
         )
-        self.J_template = nn.Buffer(torch.tensor(data.J_template, dtype=torch.float32))
-        self.J_shapedirs = nn.Buffer(torch.tensor(data.J_shapedirs, dtype=torch.float32))
-        self.kid_shapedir = nn.Buffer(torch.tensor(data.kid_shapedir, dtype=torch.float32))
-        self.kid_J_shapedir = nn.Buffer(torch.tensor(data.kid_J_shapedir, dtype=torch.float32))
-        self.weights = nn.Buffer(torch.tensor(data.weights, dtype=torch.float32))
-        self.kintree_parents_tensor = nn.Buffer(
-            torch.tensor(data.kintree_parents, dtype=torch.int64)
+        self.register_buffer('J_template', torch.tensor(data.J_template, dtype=torch.float32))
+        self.register_buffer('J_shapedirs', torch.tensor(data.J_shapedirs, dtype=torch.float32))
+        # self.register_buffer('kid_shapedir', torch.tensor(data.kid_shapedir, dtype=torch.float32))
+        # self.register_buffer('kid_J_shapedir', torch.tensor(data.kid_J_shapedir, dtype=torch.float32))
+        self.register_buffer('weights', torch.tensor(data.weights, dtype=torch.float32))
+        self.register_buffer(
+            'kintree_parents_tensor',
+            torch.tensor(data.kintree_parents, dtype=torch.int64),
         )
 
         self.kintree_parents = data.kintree_parents
@@ -215,7 +217,7 @@ class BodyModel(nn.Module):
             + torch.einsum(
                 'jcs,bs->bjc', self.J_shapedirs[:, :, :num_betas], shape_betas[:, :num_betas]
             )
-            + torch.einsum('jc,b->bjc', self.kid_J_shapedir, kid_factor)
+            # + torch.einsum('jc,b->bjc', self.kid_J_shapedir, kid_factor)
         )
 
         bones1 = j[:, 1:] - j[:, parent_indices1]
@@ -246,7 +248,7 @@ class BodyModel(nn.Module):
                 'vcp,bp->bvc', self.shapedirs[:, :, :num_betas], shape_betas[:, :num_betas]
             )
             + torch.einsum('vcp,bp->bvc', self.posedirs, pose_feature)
-            + torch.einsum('vc,b->bvc', self.kid_shapedir, kid_factor)
+            # + torch.einsum('vc,b->bvc', self.kid_shapedir, kid_factor)
         )
 
         translations = glob_positions - torch.einsum('bjCc,bjc->bjC', glob_rotmats, j)
@@ -392,8 +394,8 @@ class BodyModel(nn.Module):
         new_pose_rotvec = torch.cat([mat2rotvec(new_rotmat), pose_rotvecs[3:]], dim=0)
 
         pelvis = self.J_template[0] + self.J_shapedirs[0, :, : shape_betas.shape[0]] @ shape_betas
-        if kid_factor is not None:
-            pelvis = pelvis + self.kid_J_shapedir[0] * kid_factor
+        # if kid_factor is not None:
+        #     pelvis = pelvis + self.kid_J_shapedir[0] * kid_factor
 
         eye3 = torch.eye(3, device=R.device, dtype=R.dtype)
         if post_translate:

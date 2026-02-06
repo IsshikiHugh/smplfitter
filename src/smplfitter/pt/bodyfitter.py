@@ -42,20 +42,21 @@ class BodyFitter(nn.Module):
             part_assignment = torch.where(
                 part_assignment == 11, torch.tensor(8, dtype=torch.int64), part_assignment
             )
-        self.part_assignment = nn.Buffer(part_assignment)
+        self.register_buffer('part_assignment', part_assignment)
         self.part_vertex_selectors = [
             torch.where(part_assignment == i)[0] for i in range(body_model.num_joints)
         ]
 
-        self.default_mesh_tf = nn.Buffer(body_model.single()['vertices'])
+        self.register_buffer('default_mesh_tf', body_model.single()['vertices'])
 
         # Template for joints with shape adjustments
-        self.J_template_ext = nn.Buffer(
+        self.register_buffer(
+            'J_template_ext',
             torch.cat(
-                [body_model.J_template.view(-1, 3, 1), body_model.J_shapedirs]
-                + ([body_model.kid_J_shapedir.view(-1, 3, 1)] if enable_kid else []),
+                [body_model.J_template.view(-1, 3, 1), body_model.J_shapedirs],
+                # + ([body_model.kid_J_shapedir.view(-1, 3, 1)] if enable_kid else []),
                 dim=2,
-            )
+            ),
         )
 
         # Store joint hierarchy for each joint’s children and descendants
@@ -686,7 +687,7 @@ class BodyFitter(nn.Module):
             torch.cat(
                 [
                     self.body_model.shapedirs,
-                    self.body_model.kid_shapedir[:, :, None],
+                    # self.body_model.kid_shapedir[:, :, None],
                 ],
                 dim=2,
             )
@@ -757,6 +758,8 @@ class BodyFitter(nn.Module):
         A = A - mean_A
         b = b - mean_b
 
+        # import ez4d.debug as ezdb
+        # ezdb.bp()
         A = A.reshape(batch_size, -1, n_params)
         b = b.reshape(batch_size, -1, 1)
         w = torch.repeat_interleave(weights.reshape(batch_size, -1), 3, dim=1)
@@ -961,8 +964,8 @@ class BodyFitter(nn.Module):
             self.body_model.J_shapedirs,
             shape_betas[:, : self.n_betas],
         )
-        if kid_factor is not None:
-            j = j + torch.einsum('jc,...->...jc', self.body_model.kid_J_shapedir, kid_factor)
+        # if kid_factor is not None:
+        #     j = j + torch.einsum('jc,...->...jc', self.body_model.kid_J_shapedir, kid_factor)
 
         if scale_corr is not None:
             j = j * scale_corr

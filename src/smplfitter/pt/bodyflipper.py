@@ -28,9 +28,9 @@ class BodyFlipper(nn.Module):
         self.fitter = _bodyfitter.BodyFitter(self.body_model, enable_kid=True)
 
         res = self.body_model.single()
-        self.mirror_csr = nn.Buffer(get_mirror_csr(body_model.num_vertices))
-        self.mirror_inds_joints = nn.Buffer(get_mirror_mapping(res['joints']))
-        self.mirror_inds = nn.Buffer(get_mirror_mapping(res['vertices']))
+        self.register_buffer('mirror_csr', get_mirror_csr(body_model.num_vertices))
+        self.register_buffer('mirror_inds_joints', get_mirror_mapping(res['joints']))
+        self.register_buffer('mirror_inds', get_mirror_mapping(res['vertices']))
 
     @torch.jit.export
     def flip(

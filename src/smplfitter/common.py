@@ -38,10 +38,10 @@ class ModelData:
     J_shapedirs: np.ndarray
     """Joint shape directions, shape (num_joints, 3, num_betas)."""
 
-    kid_shapedir: np.ndarray
+    # kid_shapedir: np.ndarray
     """Kid shape blend shape for vertices, shape (num_vertices, 3)."""
 
-    kid_J_shapedir: np.ndarray
+    # kid_J_shapedir: np.ndarray
     """Kid shape blend shape for joints, shape (num_joints, 3)."""
 
     weights: np.ndarray
@@ -138,18 +138,19 @@ def initialize(
     # Kid model has an additional shape parameter which pulls the mesh towards the SMIL mean
     # template
     if model_name.lower().startswith('smpl'):
-        kid_path = os.path.join(model_root, 'kid_template.npy')
-        try:
-            v_template_smil = np.load(kid_path).astype(np.float64)
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f'Kid template not found: {kid_path}\n'
-                f'Download it: python -m smplfitter.download'
-            ) from None
-        res['kid_shapedir'] = (
-            v_template_smil - np.mean(v_template_smil, axis=0) - res['v_template']
-        )
-        res['kid_J_shapedir'] = res['J_regressor'] @ res['kid_shapedir']
+        pass
+        # kid_path = os.path.join(model_root, 'kid_template.npy')
+        # try:
+        #     v_template_smil = np.load(kid_path).astype(np.float64)
+        # except FileNotFoundError:
+        #     raise FileNotFoundError(
+        #         f'Kid template not found: {kid_path}\n'
+        #         f'Download it: python -m smplfitter.download'
+        #     ) from None
+        # res['kid_shapedir'] = (
+        #     v_template_smil - np.mean(v_template_smil, axis=0) - res['v_template']
+        # )
+        # res['kid_J_shapedir'] = res['J_regressor'] @ res['kid_shapedir']
     else:
         res['kid_shapedir'] = np.zeros_like(res['v_template'])
         res['kid_J_shapedir'] = np.zeros((res['num_joints'], 3))
@@ -196,8 +197,8 @@ def initialize(
         J_regressor_post_lbs=joint_regressor_post_lbs,
         J_template=res['J_template'],
         J_shapedirs=res['J_shapedirs'][:, :, :num_betas],
-        kid_shapedir=res['kid_shapedir'][vertex_subset],
-        kid_J_shapedir=res['kid_J_shapedir'],
+        # kid_shapedir=res['kid_shapedir'][vertex_subset],
+        # kid_J_shapedir=res['kid_J_shapedir'],
         weights=res['weights'][vertex_subset],
         kintree_parents=res['kintree_parents'],
         faces=faces,
